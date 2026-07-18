@@ -6,7 +6,9 @@ __pycache__/
 simulations/outputs/
 simulations/round_*.py
 debates/*.json
-docs/*.md
 !docs/.gitkeep
 !debates/.gitkeep
+!debates/live-*.json
 !simulations/outputs/.gitkeep
+!simulations/outputs/live_*.png
+!simulations/round_live-*.py
