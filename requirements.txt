@@ -1,0 +1,9 @@
+anthropic>=0.116.0
+langgraph>=0.2.60
+sympy>=1.13
+numpy>=1.26
+scipy>=1.13
+matplotlib>=3.9
+pandas>=2.2
+pytest>=8.0
+python-dotenv>=1.0

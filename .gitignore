@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+simulations/outputs/
+simulations/round_*.py
+debates/*.json
+docs/*.md
+!docs/.gitkeep
+!debates/.gitkeep
+!simulations/outputs/.gitkeep
