@@ -80,6 +80,14 @@ No 5-round cap — each debate runs until genuine consensus (Validator-confirmed
 
 Honest expectation: most of what the panel surfaces will already exist — that is the normal outcome of real research, and the summary says so.
 
+## Run — Deep innovation mode (assumption-breaking)
+
+```bash
+python main.py --deep-innovation
+```
+
+Instead of building on the standard assumptions, the panel attacks them (`utils/problems.py: INNOVATION_CHALLENGES`): **is D=26 actually forced** (light-cone anomaly computed at D∈{4,10,26}, zeta vs cutoff regularization, Liouville steelman); **is dimension emergent** (running spectral dimension from real random-walk ensembles vs a fixed-D control); **what if an extra dimension is timelike** (tachyon tower, growth rates, ghost norms — computed, not recited); **do we need compactification at all** (warped infinite dimension: numerical graviton zero mode + KK continuum). Rules of engagement: heresies get steelmanned, not strawmanned; a computation contradicting a textbook triggers an independent re-derivation of the textbook claim rather than auto-rejection; and every memo must state *why* the alternative failed or survived, *which* assumption rescues the orthodox picture, and *where* the nearest genuinely unsettled question is. Realistic expectation: most alternatives collapse under scrutiny — the dependency map of what saves string theory is the deliverable.
+
 ```bash
 pytest   # unit tests for schemas, mocks, runner, transcript
 ```

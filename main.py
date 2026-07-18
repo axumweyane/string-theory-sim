@@ -18,7 +18,7 @@ from langgraph.graph import END, StateGraph
 from agents import analyst, engineer, orchestrator, physicist
 from agents import validator as validator_agent
 from utils import llm
-from utils.problems import DEEP_VARIATIONS, PROBLEMS
+from utils.problems import DEEP_VARIATIONS, INNOVATION_CHALLENGES, PROBLEMS
 from utils.runner import run_simulation
 from utils.transcript import Transcript
 
@@ -202,15 +202,16 @@ def run_debate(problem: str, slug: str) -> dict:
     return final
 
 
-def run_deep() -> int:
-    """Deep open-ended research: iterate the variation queue until a novel
-    candidate survives its falsifiable test, or the target space is exhausted.
-    Known results are logged with citations and the agents move ON."""
+def run_deep(variations=DEEP_VARIATIONS, summary_slug="deep-research-summary",
+             headline="Deep open-ended research") -> int:
+    """Iterate a variation/challenge queue until a novel candidate survives its
+    falsifiable test, or the queue is exhausted. Known results are logged with
+    citations and the agents move ON."""
     stats = {"explored": 0, "accepted": 0, "deadlocked": 0, "hypotheses": 0, "known": 0, "tested": []}
     survivor = None
 
-    for var in DEEP_VARIATIONS:
-        print(f"\n########## variation {stats['explored'] + 1}/{len(DEEP_VARIATIONS)}: {var['name']} ##########")
+    for var in variations:
+        print(f"\n########## target {stats['explored'] + 1}/{len(variations)}: {var['name']} ##########")
         stats["explored"] += 1
         final = run_debate(var["text"], var["slug"])
         if final["resolution"]["decision"] != "accept":
@@ -234,9 +235,9 @@ def run_deep() -> int:
             break
 
     lines = [
-        "# Deep open-ended research — run summary",
+        f"# {headline} — run summary",
         "",
-        f"- variations explored: {stats['explored']}/{len(DEEP_VARIATIONS)}",
+        f"- targets explored: {stats['explored']}/{len(variations)}",
         f"- debates accepted: {stats['accepted']}  |  deadlocked/escalated: {stats['deadlocked']}",
         f"- candidate hypotheses raised: {stats['hypotheses']}",
         f"- already known (cited, moved on): {stats['known']}",
@@ -259,7 +260,7 @@ def run_deep() -> int:
                   "Everything surfaced was already in the literature or failed its test. "
                   "That is the normal outcome of honest research."]
     summary = "\n".join(lines) + "\n"
-    path = _write_memo("deep-research-summary", summary)
+    path = _write_memo(summary_slug, summary)
     print(f"\n{summary}\nsummary written to {path}")
     return 0
 
@@ -276,14 +277,20 @@ def main() -> int:
                         help="run Phase 2 novelty-check and test on the given hypothesis")
     parser.add_argument("--deep", action="store_true",
                         help="deep open-ended research over the variation queue; novelty is the success condition")
+    parser.add_argument("--deep-innovation", action="store_true",
+                        help="assumption-breaking mode: challenge the foundations (critical dimension, "
+                        "compactification, fundamental dimensionality) with falsifiable computations")
     parser.add_argument("--max-rounds", type=int, default=None,
-                        help="debate round cap (default: 5; deep mode: 40 hard safety stop)")
+                        help="debate round cap (default: 5; deep modes: 40 hard safety stop)")
     args = parser.parse_args()
 
-    MAX_ROUNDS = args.max_rounds or (40 if args.deep else 5)
+    MAX_ROUNDS = args.max_rounds or (40 if (args.deep or args.deep_innovation) else 5)
     mode = "MOCK" if os.environ.get("MOCK_LLM") == "1" else "LIVE"
     print(f"[mode: {mode}]")
 
+    if args.deep_innovation:
+        return run_deep(INNOVATION_CHALLENGES, "innovation-research-summary",
+                        "Deep innovation (assumption-breaking) research")
     if args.deep:
         return run_deep()
 

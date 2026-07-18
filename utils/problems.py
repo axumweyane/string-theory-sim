@@ -46,6 +46,85 @@ DEEP_VARIATIONS = [
     },
 ]
 
+# Deep-innovation mode: attack the foundational assumptions themselves.
+# Each entry names the orthodox assumption, the heresy, and a computation that
+# can genuinely falsify one side. Memos must state why the alternative fails
+# or survives, which assumption rescues the orthodoxy, and where the frontier is.
+INNOVATION_CHALLENGES = [
+    {
+        "name": "Is D=26 actually forced?",
+        "slug": "innov-critical-dimension",
+        "text": (
+            "Heresy 1: maybe the critical dimension of the bosonic string is a convention, "
+            "not a necessity. Interrogate it computationally, not by citation. In light-cone "
+            "quantization the level-1 state has D-2 polarizations and M^2 = (4/alpha')(1 - a) "
+            "with normal-ordering constant a = (D-2)/24 (zeta-regularized sum of half-integer "
+            "mode zero-point energies — derive it with SymPy, both via zeta(-1) and via a "
+            "cutoff-regularized partial sum extrapolation, and show they agree). A massive "
+            "vector needs D-1 states, so Lorentz invariance forces M^2=0 at level 1, i.e. "
+            "a=1, i.e. D=26. Compute the Lorentz-anomaly obstruction ((26-D)/12) m^3-type "
+            "coefficient numerically for D in {4, 10, 26} and show exactly where the theory "
+            "breaks and by how much. THEN steelman the heresy: what modification rescues "
+            "D != 26 (linear-dilaton / Liouville sector shifting the central charge)? State "
+            "precisely which assumption (flat background, no dilaton gradient) the textbook "
+            "conclusion depends on. If your computation contradicts a textbook claim, re-derive "
+            "the textbook claim independently before deciding which is wrong."
+        ),
+    },
+    {
+        "name": "Is dimension emergent?",
+        "slug": "innov-emergent-dimension",
+        "text": (
+            "Heresy 2: maybe spacetime dimension is not fundamental input (as in string "
+            "theory's D=26/10) but an emergent, scale-dependent observable. Build a concrete "
+            "toy: define spectral dimension d_s(sigma) = -2 dlog P(sigma)/dlog sigma from the "
+            "return probability P(sigma) of random walks on (a) a regular 4D lattice (control: "
+            "d_s = 4 at all scales) and (b) a hierarchical/graph geometry engineered so d_s "
+            "runs with scale (e.g. ~2 in the UV flowing toward ~4 in the IR). Run the actual "
+            "random-walk ensembles, plot d_s(sigma) for both, and quantify the running. Debate: "
+            "does a running d_s genuinely dissolve the 'how many dimensions' question that "
+            "string theory answers by fiat, or does the graph model smuggle the answer in "
+            "through its construction? Identify what experiment or computation could "
+            "distinguish emergent from fundamental dimensionality, and check the literature "
+            "for whether this running-dimension phenomenon is already charted."
+        ),
+    },
+    {
+        "name": "What if an extra dimension is timelike?",
+        "slug": "innov-timelike-dimension",
+        "text": (
+            "Heresy 3: compactification always assumes the extra dimensions are spacelike — "
+            "why? Compute what actually goes wrong if one is timelike: Kaluza-Klein reduce a "
+            "massless scalar on a timelike circle of radius R so the tower becomes "
+            "M^2 = m^2 - (n/R)^2, and compute (a) the number of tachyonic modes below any "
+            "cutoff as a function of R (show it diverges as the cutoff is lifted), (b) the "
+            "classical instability growth rates, and (c) the norm structure showing which "
+            "modes become ghostlike in the reduced theory. Contrast with the spacelike case "
+            "computed in earlier debates. Then steelman: are there frameworks that claim to "
+            "tame extra times (constrained two-time systems)? State exactly which assumption "
+            "(unitarity/boundedness of the Hamiltonian) rules the naive version out, and "
+            "whether the panel's computation constitutes proof or only strong evidence."
+        ),
+    },
+    {
+        "name": "Do we even need compactification?",
+        "slug": "innov-no-compactification",
+        "text": (
+            "Heresy 4: maybe hiding extra dimensions by curling them up is unnecessary. Test "
+            "the alternative: an INFINITE warped extra dimension with gravity localized on a "
+            "brane. Numerically solve the graviton-fluctuation Schrodinger problem in the "
+            "warped metric (the 'volcano potential' V(z) = 15k^2/(8(k|z|+1)^2) - (3k/2) "
+            "delta(z)): show (a) a single normalizable zero mode bound to the brane (the 4D "
+            "graviton), (b) a gapless continuum of KK modes, and (c) that the zero mode "
+            "dominates the propagator at long distance — i.e. 4D gravity emerges without "
+            "compactification. Verify normalizability and the delta-function matching "
+            "condition numerically. Debate honestly: does this kill the compactification "
+            "assumption, does it merely relocate it, and what does string theory need from "
+            "it? Literature-check whether this localization mechanism is already charted."
+        ),
+    },
+]
+
 PROBLEMS = {
     "two-body": {
         "slug": "two-body-gravity",
