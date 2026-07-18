@@ -52,6 +52,8 @@ def node_build(state: DebateState) -> dict:
     result = run_simulation(built["code"], state["round"])
     state["transcript"].log("harness", "run", {k: v for k, v in result.items() if k != "stdout"})
     print(f"  -> ok={result['ok']} metrics={result['metrics']}")
+    for a in result.get("artifacts", []):
+        print(f"  artifact: {a}")
     return {"build": built, "run_result": result}
 
 
@@ -168,6 +170,8 @@ def run_phase2(hypothesis: str, slug: str) -> int:
     result = run_simulation(built["code"], round_no="p2")
     transcript.log("harness", "run", {k: v for k, v in result.items() if k != "stdout"})
     print(f"  -> ok={result['ok']} metrics={result['metrics']}")
+    for a in result.get("artifacts", []):
+        print(f"  artifact: {a}")
 
     print("[validator] judging result...")
     attack = validator_agent.attack(test, built, result, transcript)

@@ -29,6 +29,24 @@ def test_mock_responses_fit_schemas():
         assert set(out) == set(schema["properties"]), phase
 
 
+def test_viz_mock_responses_fit_schemas():
+    from utils import mock
+
+    payload = {
+        "problem": "project string vibration into 3D with an animation and rotating camera",
+        "attacks": [{"verdict": "pass"}],
+        "run_result": {
+            "metrics": {
+                "energy_rel_drift": 1e-15, "closure_error": 1e-16,
+                "node_count": 6, "expected_nodes": 6, "n_frames": 72,
+            }
+        },
+    }
+    for phase in ("propose", "build", "attack_validator", "attack_analyst", "rebut", "resolve", "analyze"):
+        out = mock.respond("any", phase, payload)
+        assert set(out) == set(SCHEMAS[phase]["properties"]), phase
+
+
 def test_string_mock_responses_fit_schemas():
     from utils import mock
 

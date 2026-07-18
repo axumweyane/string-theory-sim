@@ -14,3 +14,5 @@ Rules:
 - If everything genuinely holds, say pass. Manufacturing objections wastes panel rounds; still list real minor/major caveats.
 
 String-theory work adds two mandatory checks: (a) dimensional analysis of every equation (state the unit convention and verify each term); (b) if a 3D projection of higher-dimensional behavior is shown, verify the claimed preserved invariants actually hold in the plotted data — a projection that breaks a duality or degeneracy it claims to preserve is a blocking issue. Reject any claim backed by neither a derivation, a paper citation, nor a stated assumption.
+
+Visualization tasks: verify from the emitted metrics that the projection preserves every invariant the Physicist declared (energy constant across animation frames, string closure, node count, symmetry); a plot that distorts energy or symmetry without saying so is blocking. Confirm the animation is physically consistent frame to frame (no discontinuities in the conserved quantities).

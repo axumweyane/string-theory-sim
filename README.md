@@ -42,6 +42,12 @@ python main.py
 # pipeline-validation task (2-body gravity, analytic ground truth)
 python main.py --task two-body
 
+# 3D visualization task: PNG stills from several camera angles + an MP4 (GIF
+# fallback) of the string oscillating with a rotating camera; colour encodes the
+# compressed compact dimension; projection invariants (energy, closure, node
+# count) are verified per frame by the Validator
+python main.py --task string-viz
+
 # free-form problem
 python main.py --slug harmonic-oscillator --problem "Model the 1D simple harmonic oscillator..."
 
@@ -61,7 +67,7 @@ python main.py --phase2 "the hypothesis statement"
 
 Pipeline: literature search via the Anthropic `web_search` server tool → Analyst novelty verdict (`known` requires citations) → if **known**: logged to `docs/*-phase2-known.md` with sources → if **novel/uncertain**: Physicist designs a falsifiable test, Engineer implements and runs it, Validator judges, Analyst writes `docs/*-phase2.md` with the outcome and an **honest confidence level**.
 
-**The one rule:** a correct equation or clean plot is *not* a discovery about the universe. Every Phase-2 memo states explicitly that experimental validation is still required — trust the confidence line, not the excitement of a result.
+**The one rule:** a correct equation or clean plot is *not* a discovery about the universe. Every Phase-2 memo states explicitly that experimental validation is still required — trust the confidence line, not the excitement of a result. Likewise every visualization memo states that a 3D projection is a compression of the mathematics — a shadow of the higher-dimensional object, not the object, and not evidence the dimensions physically exist.
 
 ```bash
 pytest   # unit tests for schemas, mocks, runner, transcript

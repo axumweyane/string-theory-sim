@@ -15,7 +15,9 @@ RESULT_RE = re.compile(r"^RESULT_JSON:\s*(\{.*\})\s*$", re.MULTILINE)
 
 
 def run_simulation(code: str, round_no: int | str, timeout: int = 300) -> dict:
-    (SIM_DIR / "outputs").mkdir(parents=True, exist_ok=True)
+    out_dir = SIM_DIR / "outputs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    before = {p.name for p in out_dir.iterdir()}
     path = SIM_DIR / f"round_{round_no}.py"
     path.write_text(code)
     try:
@@ -36,6 +38,7 @@ def run_simulation(code: str, round_no: int | str, timeout: int = 300) -> dict:
             metrics = json.loads(m.group(1))
         except json.JSONDecodeError:
             pass
+    artifacts = sorted(str(out_dir / n) for n in {p.name for p in out_dir.iterdir()} - before)
     return {
         "ok": proc.returncode == 0 and metrics is not None,
         "returncode": proc.returncode,
@@ -43,4 +46,5 @@ def run_simulation(code: str, round_no: int | str, timeout: int = 300) -> dict:
         "stderr": proc.stderr[-4000:],
         "metrics": metrics,
         "code_path": str(path),
+        "artifacts": artifacts,
     }

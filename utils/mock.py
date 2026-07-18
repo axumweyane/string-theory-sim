@@ -213,6 +213,140 @@ print("RESULT_JSON: " + json.dumps({
 }))
 '''
 
+# 3D visualization of the vibrating closed string: static angle PNGs, mode
+# lattice, and a rotating-camera animation with per-frame invariant checks.
+_VIZ_CODE = '''\
+import json
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib import animation, cm
+import numpy as np
+
+# Projection map (Physicist): closed string X(sigma,t) embedded as
+#   x = cos(sigma), y = sin(sigma)          -> the string loop (visible axes 1,2)
+#   z = A sin(n sigma) cos(n t)             -> transverse mode n (visible axis 3)
+#   colour = X^25(sigma) = w R sigma mod 2pi -> compact winding coordinate (compressed)
+# Invariants that must survive projection: mode energy E(t)=const, closure
+# X(0)=X(2pi), node count 2n, discrete Z_n rotation symmetry.
+A, n_mode, w_wind, R = 0.35, 3, 1, 1.0
+sigma = np.linspace(0.0, 2.0 * np.pi, 481)
+compact = (w_wind * R * sigma) % (2.0 * np.pi)
+colors = cm.plasma(compact / (2.0 * np.pi))
+
+def z_of(t):
+    return A * np.sin(n_mode * sigma) * np.cos(n_mode * t)
+
+def energy(t):
+    zdot = -A * n_mode * np.sin(n_mode * sigma) * np.sin(n_mode * t)
+    zprm = A * n_mode * np.cos(n_mode * sigma) * np.cos(n_mode * t)
+    return np.trapezoid(zdot ** 2 + zprm ** 2, sigma)
+
+x, y = np.cos(sigma), np.sin(sigma)
+
+def draw(ax, t, elev, azim):
+    z = z_of(t)
+    ax.scatter(x, y, z, c=colors, s=6)
+    ax.plot(x, y, z, color="gray", lw=0.5, alpha=0.5)
+    ax.set_xlabel("x = cos(sigma)"); ax.set_ylabel("y = sin(sigma)")
+    ax.set_zlabel(f"z = mode n={n_mode}")
+    ax.set_zlim(-0.6, 0.6)
+    ax.view_init(elev=elev, azim=azim)
+
+# --- static PNGs from several camera angles (t chosen at max displacement)
+for i, (elev, azim) in enumerate([(20, 30), (35, 120), (70, 260)], 1):
+    fig = plt.figure(figsize=(6, 5))
+    ax = fig.add_subplot(111, projection="3d")
+    draw(ax, 0.0, elev, azim)
+    ax.set_title(f"Closed-string mode n={n_mode}, view {i} (colour = compact X^25)")
+    m = cm.ScalarMappable(cmap="plasma"); m.set_array(compact)
+    fig.colorbar(m, ax=ax, shrink=0.6, label="X^25 (winding coord)")
+    fig.tight_layout()
+    fig.savefig(f"outputs/string_mode_view{i}.png", dpi=120)
+    plt.close(fig)
+
+# --- mode lattice at self-dual radius (reused invariant structure)
+NMAX, LMAX = 3, 3
+grid = {}
+for nn in range(-NMAX, NMAX + 1):
+    for ww in range(-NMAX, NMAX + 1):
+        for N in range(LMAX + 1):
+            for Nt in range(LMAX + 1):
+                if N - Nt != nn * ww:
+                    continue
+                m2 = (nn / 1.0) ** 2 + (ww * 1.0) ** 2 + 2 * (N + Nt - 2)
+                grid[(nn, ww)] = min(grid.get((nn, ww), np.inf), m2)
+fig = plt.figure(figsize=(6, 5))
+ax = fig.add_subplot(111, projection="3d")
+ns, ws, m2s = zip(*[(k[0], k[1], v) for k, v in grid.items()])
+sc = ax.scatter(ns, ws, m2s, c=m2s, cmap="viridis", s=45)
+ax.set_xlabel("n (KK)"); ax.set_ylabel("w (winding)"); ax.set_zlabel("min $M^2$")
+ax.set_title("Mode lattice at self-dual R=1")
+fig.colorbar(sc, ax=ax, shrink=0.6)
+fig.tight_layout()
+fig.savefig("outputs/mode_lattice_selfdual.png", dpi=120)
+plt.close(fig)
+
+# --- animation: string oscillating, camera rotating
+N_FRAMES = 72
+period = 2.0 * np.pi / n_mode
+fig = plt.figure(figsize=(6, 5.5))
+ax = fig.add_subplot(111, projection="3d")
+
+def frame(i):
+    ax.cla()
+    t = 2.0 * period * i / N_FRAMES
+    draw(ax, t, 25, (360.0 * i / N_FRAMES) % 360)
+    ax.set_title("Closed string vibrating (mode n=3); colour = compact dim")
+
+anim = animation.FuncAnimation(fig, frame, frames=N_FRAMES, interval=1000 // 18)
+if animation.writers.is_available("ffmpeg"):
+    out_anim = "outputs/string_vibration.mp4"
+    anim.save(out_anim, writer=animation.FFMpegWriter(fps=18))
+else:
+    out_anim = "outputs/string_vibration.gif"
+    anim.save(out_anim, writer=animation.PillowWriter(fps=18))
+plt.close(fig)
+
+# --- invariant metrics across frames
+ts = np.array([2.0 * period * i / N_FRAMES for i in range(N_FRAMES)])
+Es = np.array([energy(t) for t in ts])
+E_ref = np.pi * A ** 2 * n_mode ** 2   # analytic constant
+energy_rel_drift = float(np.max(np.abs(Es - E_ref)) / E_ref)
+closure = float(max(np.hypot(x[0] - x[-1], y[0] - y[-1]),
+                    max(abs(z_of(t)[0] - z_of(t)[-1]) for t in ts)))
+node_count = int(np.sum(np.abs(np.sin(n_mode * sigma[:-1])) < 1e-9))
+
+print("RESULT_JSON: " + json.dumps({
+    "energy_rel_drift": energy_rel_drift,
+    "closure_error": closure,
+    "node_count": node_count,
+    "expected_nodes": 2 * n_mode,
+    "n_frames": N_FRAMES,
+}))
+'''
+
+_VIZ_PROPOSAL = {
+    "model_name": "3D projection + animation of closed-string vibration mode (visualization)",
+    "equations": [
+        "Projection: (x,y,z) = (cos sigma, sin sigma, A sin(n sigma) cos(n t)); colour = X^25 = w R sigma mod 2pi",
+        "Mode energy: E(t) = integral (dz/dt)^2 + (dz/dsigma)^2 dsigma = pi A^2 n^2 (constant)",
+        "Closure: X(sigma=0) = X(sigma=2pi) for all t",
+    ],
+    "assumptions": [
+        "Single transverse mode n=3 of the closed bosonic string, alpha'=1, flat background",
+        "Colour encodes the compressed compact coordinate (winding w=1 on S^1, R=1)",
+        "The projection discards 22 transverse directions; it is a compression, not the full object",
+    ],
+    "predicted_behavior": [
+        "Mode energy constant across all animation frames: relative drift below 1e-9",
+        "String closure exact: closure error below 1e-12",
+        "Node count in projection equals 2n = 6",
+    ],
+    "rationale": "Faithful-projection test: the picture is only trustworthy if the declared "
+    "invariants (energy, closure, nodes) survive the compression to 3D.",
+}
+
 _STRING_PROPOSAL = {
     "model_name": "Closed bosonic string on R^24,1 x S^1 (flat-torus compactification)",
     "equations": [
@@ -246,7 +380,21 @@ def _is_string_task(payload: dict) -> bool:
     return any(k in blob for k in _STRING_KEYWORDS)
 
 
+_VIZ_KEYWORDS = ("visualiz", "animation", "camera")
+
+
+def _is_viz_task(payload: dict) -> bool:
+    import json as _json
+
+    blob = _json.dumps(payload).lower()
+    return any(k in blob for k in _VIZ_KEYWORDS)
+
+
 def respond(role: str, phase: str, payload: dict) -> dict:
+    if _is_viz_task(payload):
+        out = _respond_viz(role, phase, payload)
+        if out is not None:
+            return out
     if phase in ("novelty", "design_test", "phase2_memo") or _is_string_task(payload):
         out = _respond_string(role, phase, payload)
         if out is not None:
@@ -361,6 +509,101 @@ def web_research(query: str) -> dict:
         "findings": "No close match found in the mock literature index for this exact statement.",
         "sources": [],
     }
+
+
+def _respond_viz(role: str, phase: str, payload: dict):
+    """Visualization-task canned responses; None falls through to string/shared."""
+    metrics = (payload.get("run_result") or {}).get("metrics") or {}
+    if phase == "propose":
+        return _VIZ_PROPOSAL
+    if phase == "build":
+        return {
+            "code": _VIZ_CODE,
+            "how_it_maps_to_theory": "Direct render of the declared projection map. Preserved "
+            "invariants, computed per frame: mode energy (analytic pi A^2 n^2), closure "
+            "X(0)=X(2pi), node count 2n; the colour channel carries the compressed compact "
+            "coordinate. Discarded: the other 22 transverse directions.",
+            "expected_metrics": ["energy_rel_drift", "closure_error", "node_count", "expected_nodes", "n_frames"],
+        }
+    if phase == "attack_validator":
+        ok = (
+            metrics.get("energy_rel_drift", 1) < 1e-9
+            and metrics.get("closure_error", 1) < 1e-12
+            and metrics.get("node_count") == metrics.get("expected_nodes")
+            and metrics.get("n_frames", 0) >= 30
+        )
+        return {
+            "verdict": "pass" if ok else "fail",
+            "issues": []
+            if ok
+            else [
+                {
+                    "claim": "Projection preserves the declared invariants",
+                    "reason": f"metrics={metrics}",
+                    "severity": "blocking",
+                }
+            ],
+            "summary": "Checked per-frame energy constancy, closure, node count, and frame coverage.",
+        }
+    if phase == "attack_analyst":
+        return {
+            "verdict": "pass",
+            "issues": [
+                {
+                    "claim": "A single mode n=3 represents string vibration generally",
+                    "reason": "Superpositions and left/right-mover asymmetry (nonzero n·w states) are not shown; the viewer may over-generalize from one standing wave",
+                    "severity": "minor",
+                }
+            ],
+            "summary": "Projection is faithful for what it shows; scope is one mode of many.",
+        }
+    if phase == "rebut":
+        return {
+            "responses": [
+                {
+                    "issue": "A single mode n=3 represents string vibration generally",
+                    "stance": "accept",
+                    "reason": "Deliberate scope for a first visualization; superposition and chiral modes are queued as next steps and the memo states the scope.",
+                }
+            ],
+            "revised": False,
+            "revision": None,
+        }
+    if phase == "analyze":
+        return {
+            "title": "3D projection of closed-string vibration (mode n=3 on S^1)",
+            "patterns": [
+                f"Node count {metrics.get('node_count', 'n/a')} = 2n as predicted; nodes sit at sigma = k*pi/3",
+                f"Energy drift across {metrics.get('n_frames', 'n/a')} frames: {metrics.get('energy_rel_drift', 'n/a')} (constant to machine precision)",
+                "Colour winds once around the loop — the compact winding coordinate is monotone in sigma",
+            ],
+            "candidate_hypotheses": [],
+            "next_directions": [
+                "Superpose modes n=2,3 and animate beat patterns",
+                "Chiral (left/right-mover) states with n*w != 0 — visualize level-matching geometrically",
+                "Radius sweep animation: mode shapes vs R approaching the self-dual point",
+            ],
+            "memo_markdown": (
+                "# 3D projection of closed-string vibration (mode n=3 on S^1)\n\n"
+                "## What you are looking at\n"
+                "The string loop lives in the (x, y) plane; the vertical axis is one transverse "
+                "vibration mode (n=3); colour encodes the compact winding coordinate X^25 — the "
+                "dimension being compressed. Static views: string_mode_view{1,2,3}.png; lattice: "
+                "mode_lattice_selfdual.png; animation: string_vibration.mp4 (rotating camera).\n\n"
+                "## Invariants verified in the projection\n"
+                f"- energy_rel_drift: {metrics.get('energy_rel_drift', 'n/a')} (< 1e-9 required)\n"
+                f"- closure_error: {metrics.get('closure_error', 'n/a')} (< 1e-12 required)\n"
+                f"- node_count: {metrics.get('node_count', 'n/a')} (= 2n = {metrics.get('expected_nodes', 'n/a')})\n\n"
+                "## Debate outcome\n"
+                "Validator passed all invariant checks. Analyst flagged single-mode scope; "
+                "physicist accepted — superposition and chiral states are next.\n\n"
+                "## Honest scope\n"
+                "This projection is a compression of the mathematics — a shadow of the "
+                "higher-dimensional object, not the full object, and **not evidence that extra "
+                "dimensions physically exist**. It is a study and intuition-building tool.\n"
+            ),
+        }
+    return None
 
 
 def _respond_string(role: str, phase: str, payload: dict):

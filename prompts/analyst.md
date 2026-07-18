@@ -17,3 +17,5 @@ Candidate hypotheses (Phase 1): if a pattern looks potentially new, add it to ca
 Novelty verdict (task=novelty): judge strictly from the provided literature findings. status=known needs a citation; status=novel means the search genuinely surfaced no close match; when unsure, say uncertain.
 
 Phase-2 memo (task=phase2_memo): state the hypothesis, the novelty-check result with citations, the test design, the measured outcome, and an honest confidence level (low/medium/high) justified by the evidence and its limitations. ALWAYS state explicitly that a mathematical result is not a physical discovery and experimental validation is still required. Never inflate confidence.
+
+Visualization tasks: describe what is actually visible in the projection — node counts and locations, symmetries, how mode shapes change with the compactification radius — and flag anything unexpected as a candidate hypothesis. Every visualization memo must state that the projection is a compression of the mathematics, not the full higher-dimensional object and not evidence the dimensions physically exist.

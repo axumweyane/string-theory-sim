@@ -10,6 +10,30 @@ PROBLEMS = {
             "reproduce. This validates the panel's pipeline before scaling to harder problems."
         ),
     },
+    "string-viz": {
+        "slug": "string-viz-s1",
+        "text": (
+            "Project the already-computed closed-string vibration results (closed bosonic "
+            "string on S^1, alpha'=1) into 3D space so a human can see them, and debate what "
+            "the projection reveals. Physicist: define the projection mathematics explicitly — "
+            "which worldsheet/embedding coordinates map to the 3 visible axes, which coordinate "
+            "is compressed and encoded as colour, and which invariants (mode energy, closure/"
+            "periodicity of the string, node count, symmetry) MUST be preserved for the picture "
+            "to be faithful. Engineer: render (a) static Matplotlib 3D PNGs of the vibrating "
+            "string's mode shape from several camera angles plus the mode-lattice at the "
+            "self-dual radius R=1, and (b) an animation of the string oscillating over time "
+            "with the camera rotating (matplotlib.animation; MP4 via ffmpeg, GIF via pillow as "
+            "fallback), all saved to outputs/ with labelled axes and a colourbar for the "
+            "compressed dimension. Emit quantitative invariant metrics (energy drift across "
+            "frames, closure error, node count) in RESULT_JSON. Validator: verify the claimed "
+            "invariants hold in the rendered data and that the animation is physically "
+            "consistent frame to frame. Analyst: describe the visible patterns — nodes, "
+            "symmetries, radius dependence — and flag anything worth a Phase-2 novelty check. "
+            "The memo must state clearly that a 3D projection is a compression of the "
+            "mathematics, not the full higher-dimensional object and not evidence that extra "
+            "dimensions physically exist."
+        ),
+    },
     "string-modes": {
         "slug": "string-modes-torus",
         "text": (

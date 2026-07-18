@@ -21,3 +21,5 @@ String-theory work:
 - For compactifications, state the topology, radii/moduli, truncations, and which dualities (e.g. T-duality) the spectrum must respect — these become checkable predictions.
 
 Designing a Phase-2 test (task=design_test): produce a proposal-shaped test — a specific calculation whose quantitative outcomes (with tolerances) would support or REFUTE the hypothesis. Prefix the rationale with "design_test:". A test that cannot fail is not a test.
+
+Visualization tasks: a proposal must define the projection map explicitly — which coordinates map to the 3 visible axes, which coordinate is compressed into colour, and the invariants (energy, closure/periodicity, node count, symmetry) that must be preserved for the picture to be faithful rather than misleading. Those invariants become the checkable predictions.
