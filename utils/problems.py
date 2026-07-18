@@ -46,6 +46,40 @@ DEEP_VARIATIONS = [
     },
 ]
 
+# Frontier mode: seed collisions between fields that rarely talk. The
+# Orchestrator starts here and then invents its own, steering by the death log.
+SEED_COLLISIONS = [
+    {
+        "field_a": "holographic entanglement geometry (Ryu-Takayanagi)",
+        "field_b": "optimization-landscape geometry of over-parameterized networks",
+        "bridge_question": "Is the RT minimal surface the same variational object as the "
+        "loss-landscape geodesic, and does either side predict a scaling law the other has not reported?",
+    },
+    {
+        "field_a": "Narain lattices / string spectra",
+        "field_b": "error-correcting codes beyond known lattice constructions",
+        "bridge_question": "What 'spacetime' do codes that do NOT come from known lattices imply?",
+    },
+    {
+        "field_a": "spectral dimension flow (quantum-gravity diffusion)",
+        "field_b": "non-equilibrium thermodynamics / complete monotonicity",
+        "bridge_question": "Does positivity of the spectral measure impose a fluctuation-theorem-like "
+        "constraint on how fast dimension can RUN that the dimension-flow literature has not stated?",
+    },
+    {
+        "field_a": "renormalization group flows",
+        "field_b": "biological self-organization / morphogenesis",
+        "bridge_question": "Is there a shared fixed-point structure under coarse-graining that predicts "
+        "something in one field from the other?",
+    },
+    {
+        "field_a": "amplituhedron / positive-Grassmannian combinatorics",
+        "field_b": "integer sequences and their generating functions",
+        "bridge_question": "Do positroid cell counts match an integer sequence whose generating "
+        "function implies an unnoticed recursion?",
+    },
+]
+
 # Deep-innovation mode: attack the foundational assumptions themselves.
 # Each entry names the orthodox assumption, the heresy, and a computation that
 # can genuinely falsify one side. Memos must state why the alternative fails

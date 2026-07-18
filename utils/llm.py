@@ -16,6 +16,7 @@ MODEL_FOR_ROLE = {
     "physicist": OPUS,
     "validator": OPUS,
     "orchestrator": OPUS,
+    "cross_specialist": OPUS,
     "engineer": SONNET,
     "analyst": SONNET,
 }

@@ -142,7 +142,40 @@ PHASE2_MEMO = _obj(
     }
 )
 
+COLLIDE = _obj(
+    {
+        "field_a": {"type": "string"},
+        "field_b": {"type": "string"},
+        "bridge_question": {"type": "string", "description": "One specific, computable question at the seam"},
+        "rationale": {"type": "string", "description": "Why this seam is under-explored, informed by prior deaths"},
+    }
+)
+
+BRIDGE = _obj(
+    {
+        "imported_structure": {"type": "string", "description": "The specific theorem/inequality/object from Field B"},
+        "what_it_constrains": {"type": "string"},
+        "why_field_a_misses_it": {"type": "string"},
+        "computable_test": {"type": "string", "description": "What a <100-line toy must show"},
+    }
+)
+
+SCORECARD = _obj(
+    {
+        "mathematical_closure": {"type": "integer", "minimum": 0, "maximum": 10},
+        "artifact_resistance": {"type": "integer", "minimum": 0, "maximum": 10},
+        "prediction_novelty": {"type": "integer", "minimum": 0, "maximum": 10},
+        "literature_gap": {"type": "integer", "minimum": 0, "maximum": 10},
+        "cross_field_genuineness": {"type": "integer", "minimum": 0, "maximum": 10},
+        "verdict": {"type": "string", "enum": ["survivor", "near_miss", "dead"]},
+        "reasoning": {"type": "string", "description": "Per-axis justification; for dead candidates, the failure map entry"},
+    }
+)
+
 SCHEMAS = {
+    "collide": COLLIDE,
+    "bridge": BRIDGE,
+    "scorecard": SCORECARD,
     "propose": PROPOSE,
     "build": BUILD,
     "attack_validator": ATTACK,

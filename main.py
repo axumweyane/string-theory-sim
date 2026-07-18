@@ -15,10 +15,10 @@ from typing import Any, TypedDict
 from dotenv import load_dotenv
 from langgraph.graph import END, StateGraph
 
-from agents import analyst, engineer, orchestrator, physicist
+from agents import analyst, cross_specialist, engineer, orchestrator, physicist
 from agents import validator as validator_agent
 from utils import llm
-from utils.problems import DEEP_VARIATIONS, INNOVATION_CHALLENGES, PROBLEMS
+from utils.problems import DEEP_VARIATIONS, INNOVATION_CHALLENGES, PROBLEMS, SEED_COLLISIONS
 from utils.runner import run_simulation
 from utils.transcript import Transcript
 
@@ -265,6 +265,88 @@ def run_deep(variations=DEEP_VARIATIONS, summary_slug="deep-research-summary",
     return 0
 
 
+FRONTIER_THRESHOLDS = {"mathematical_closure": 6, "artifact_resistance": 7,
+                       "prediction_novelty": 7, "literature_gap": 6, "cross_field_genuineness": 6}
+
+
+def run_frontier(max_rounds: int = 40) -> int:
+    """Hunt for novelty at field collisions: collide -> propose -> build -> attack
+    -> literature check -> scorecard. Deaths are logged; the failure map is the
+    product even with zero survivors."""
+    transcript = Transcript("frontier")
+    deaths, near_misses = [], []
+
+    for rnd in range(1, max_rounds + 1):
+        print(f"\n########## frontier round {rnd}/{max_rounds} ##########")
+        collision = orchestrator.collide(rnd, SEED_COLLISIONS, deaths, transcript)
+        print(f"[orchestrator] collide: {collision['field_a']}  x  {collision['field_b']}")
+        print(f"  bridge: {collision['bridge_question']}")
+
+        bridge = cross_specialist.bridge(collision, transcript)
+        print(f"[cross-specialist] import: {bridge['imported_structure']}")
+
+        proposal = physicist.propose(
+            f"Frontier collision. Field A: {collision['field_a']}. Field B: {collision['field_b']}. "
+            f"Bridge question: {collision['bridge_question']}. Imported structure from Field B: "
+            f"{bridge['imported_structure']} — {bridge['what_it_constrains']}. Computable test: "
+            f"{bridge['computable_test']}. Build the joint mechanism.",
+            transcript,
+        )
+        print(f"[physicist+cross-specialist] proposal: {proposal['model_name']}")
+
+        built = engineer.build(proposal, None, transcript)
+        result = run_simulation(built["code"], f"frontier-r{rnd}")
+        transcript.log("harness", "run", {k: v for k, v in result.items() if k != "stdout"})
+        print(f"[engineer] ok={result['ok']} metrics={result['metrics']}")
+
+        attack = validator_agent.attack(proposal, built, result, transcript)
+        print(f"[validator] {attack['verdict']}")
+        if attack["verdict"] == "fail" or not result["ok"]:
+            death = {"round": rnd, "collision": collision["bridge_question"],
+                     "killed_by": "validator" if result["ok"] else "runtime",
+                     "why": attack["summary"]}
+            deaths.append(death)
+            print(f"  -> DEAD ({death['killed_by']}): {death['why'][:120]}")
+            continue
+
+        research = llm.web_research(f"{proposal['model_name']}: {proposal['rationale']}")
+        transcript.log("analyst", "web_search", research)
+        novelty = analyst.novelty(proposal["model_name"] + " — " + proposal["rationale"], research, transcript)
+        print(f"[analyst] novelty: {novelty['status']}")
+
+        card = orchestrator.scorecard(collision, proposal, result, attack, novelty, transcript)
+        axes = {k: card[k] for k in FRONTIER_THRESHOLDS}
+        passed = all(card[k] >= v for k, v in FRONTIER_THRESHOLDS.items())
+        print(f"[orchestrator] scorecard {axes} -> {card['verdict']}")
+
+        if card["verdict"] == "survivor" and passed:
+            memo = (f"# FRONTIER SURVIVOR (round {rnd})\n\n**Do not announce — hand to a domain "
+                    f"expert first.**\n\n## Collision\n{collision['field_a']} x {collision['field_b']}\n\n"
+                    f"## Mechanism\n{proposal['model_name']}\n\nEquations: {proposal['equations']}\n\n"
+                    f"## Scorecard\n{axes}\n\n## Reasoning\n{card['reasoning']}\n\n"
+                    f"Math is not physics: this is a promising mathematical claim requiring expert "
+                    f"review and, ultimately, experiment — not a discovery.\n")
+            path = _write_memo(f"frontier-survivor-r{rnd}", memo)
+            print(f"SURVIVOR — memo: {path}")
+            return 0
+        if card["verdict"] == "near_miss":
+            near_misses.append({"round": rnd, "claim": proposal["model_name"], "axes": axes,
+                                "why_near": card["reasoning"]})
+        deaths.append({"round": rnd, "collision": collision["bridge_question"],
+                       "killed_by": "scorecard", "why": card["reasoning"]})
+
+    lines = ["# Frontier run — dependency map (no survivor)", "",
+             f"- rounds: {len(deaths)}; near-misses: {len(near_misses)}", "", "## Deaths"]
+    lines += [f"- r{d['round']} [{d['killed_by']}] {d['collision']}: {d['why']}" for d in deaths]
+    if near_misses:
+        lines += ["", "## Near-misses (worth a human expert's second look)"]
+        lines += [f"- r{m['round']} {m['claim']} — {m['axes']}: {m['why_near']}" for m in near_misses]
+    lines += ["", "Math is not physics; every claim above requires expert review."]
+    path = _write_memo("frontier-dependency-map", "\n".join(lines) + "\n")
+    print(f"\nno survivor — dependency map: {path}")
+    return 0
+
+
 def main() -> int:
     load_dotenv()
     global MAX_ROUNDS
@@ -277,6 +359,9 @@ def main() -> int:
                         help="run Phase 2 novelty-check and test on the given hypothesis")
     parser.add_argument("--deep", action="store_true",
                         help="deep open-ended research over the variation queue; novelty is the success condition")
+    parser.add_argument("--frontier", action="store_true",
+                        help="frontier novelty hunt: collide two fields per round, score candidates "
+                        "on 5 axes, log every death; 40-round safety stop")
     parser.add_argument("--deep-innovation", action="store_true",
                         help="assumption-breaking mode: challenge the foundations (critical dimension, "
                         "compactification, fundamental dimensionality) with falsifiable computations")
@@ -284,10 +369,12 @@ def main() -> int:
                         help="debate round cap (default: 5; deep modes: 40 hard safety stop)")
     args = parser.parse_args()
 
-    MAX_ROUNDS = args.max_rounds or (40 if (args.deep or args.deep_innovation) else 5)
+    MAX_ROUNDS = args.max_rounds or (40 if (args.deep or args.deep_innovation or args.frontier) else 5)
     mode = "MOCK" if os.environ.get("MOCK_LLM") == "1" else "LIVE"
     print(f"[mode: {mode}]")
 
+    if args.frontier:
+        return run_frontier(MAX_ROUNDS)
     if args.deep_innovation:
         return run_deep(INNOVATION_CHALLENGES, "innovation-research-summary",
                         "Deep innovation (assumption-breaking) research")

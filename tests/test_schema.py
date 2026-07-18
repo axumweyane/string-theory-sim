@@ -4,7 +4,7 @@ from utils.schema import SCHEMAS
 
 EXPECTED_PHASES = {
     "propose", "build", "attack_validator", "attack_analyst", "rebut", "resolve", "analyze",
-    "novelty", "design_test", "phase2_memo",
+    "novelty", "design_test", "phase2_memo", "collide", "bridge", "scorecard",
 }
 
 

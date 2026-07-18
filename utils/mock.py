@@ -390,7 +390,33 @@ def _is_viz_task(payload: dict) -> bool:
     return any(k in blob for k in _VIZ_KEYWORDS)
 
 
+def _respond_frontier(role: str, phase: str, payload: dict):
+    if phase == "collide":
+        seeds = payload.get("seed_collisions") or []
+        i = (payload.get("round", 1) - 1) % max(len(seeds), 1)
+        seed = seeds[i] if seeds else {"field_a": "A", "field_b": "B", "bridge_question": "?"}
+        return {**seed, "rationale": "mock: walk the seed list; prior deaths steer nothing here"}
+    if phase == "bridge":
+        return {
+            "imported_structure": "Complete monotonicity of the string-spectrum heat kernel (Bernstein)",
+            "what_it_constrains": "Bounds the log-derivative of any positive-measure diffusion trace",
+            "why_field_a_misses_it": "Field A treats the trace as data, not as a Laplace transform",
+            "computable_test": "Verify the derivative bound numerically on string mode spectra",
+        }
+    if phase == "scorecard":
+        return {
+            "mathematical_closure": 8, "artifact_resistance": 8, "prediction_novelty": 5,
+            "literature_gap": 4, "cross_field_genuineness": 6, "verdict": "dead",
+            "reasoning": "mock: killed by literature_gap axis — canned prior work exists",
+        }
+    return None
+
+
 def respond(role: str, phase: str, payload: dict) -> dict:
+    if phase in ("collide", "bridge", "scorecard"):
+        out = _respond_frontier(role, phase, payload)
+        if out is not None:
+            return out
     if _is_viz_task(payload):
         out = _respond_viz(role, phase, payload)
         if out is not None:
