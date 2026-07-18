@@ -3,7 +3,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-simulations/outputs/
+simulations/outputs/*
 simulations/round_*.py
 debates/*.json
 !docs/.gitkeep
