@@ -94,12 +94,51 @@ RESOLVE = _obj(
     }
 )
 
+_HYPOTHESIS = _obj(
+    {
+        "statement": {"type": "string", "description": "The candidate result, stated precisely"},
+        "argument": {"type": "string", "description": "The logical/numerical argument behind it"},
+        "novelty_rationale": {"type": "string", "description": "Why this might be new (or where it likely already exists)"},
+    }
+)
+
 ANALYZE = _obj(
     {
         "title": {"type": "string"},
         "patterns": {"type": "array", "items": {"type": "string"}},
+        "candidate_hypotheses": {
+            "type": "array",
+            "items": _HYPOTHESIS,
+            "description": "Results that look potentially novel — empty list if nothing qualifies",
+        },
         "next_directions": {"type": "array", "items": {"type": "string"}},
         "memo_markdown": {"type": "string", "description": "Full research memo in Markdown"},
+    }
+)
+
+NOVELTY = _obj(
+    {
+        "status": {"type": "string", "enum": ["known", "novel", "uncertain"]},
+        "summary": {"type": "string", "description": "What the literature search found"},
+        "citations": {
+            "type": "array",
+            "items": _obj({"title": {"type": "string"}, "url": {"type": "string"}}),
+        },
+        "reasoning": {"type": "string"},
+    }
+)
+
+PHASE2_MEMO = _obj(
+    {
+        "title": {"type": "string"},
+        "hypothesis": {"type": "string"},
+        "outcome": {"type": "string", "enum": ["supported", "refuted", "inconclusive"]},
+        "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+        "memo_markdown": {
+            "type": "string",
+            "description": "Memo: hypothesis, novelty-check result, test, outcome, honest confidence, "
+            "and an explicit statement that experimental validation is still required",
+        },
     }
 )
 
@@ -111,4 +150,7 @@ SCHEMAS = {
     "rebut": REBUT,
     "resolve": RESOLVE,
     "analyze": ANALYZE,
+    "novelty": NOVELTY,
+    "design_test": PROPOSE,  # a Phase-2 test is proposal-shaped: equations, assumptions, checkable predictions
+    "phase2_memo": PHASE2_MEMO,
 }

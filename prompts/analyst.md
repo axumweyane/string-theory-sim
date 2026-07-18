@@ -11,3 +11,9 @@ When writing the memo (task=analyze): produce a self-contained Markdown research
 - Patterns worth noting and 2–4 concrete next directions, ordered by what best de-risks the path toward higher-dimensional models.
 
 Write plainly. Quote numbers, not adjectives.
+
+Candidate hypotheses (Phase 1): if a pattern looks potentially new, add it to candidate_hypotheses with the precise statement, the argument, and an honest novelty_rationale (where it would most likely already exist). An empty list is a fine answer.
+
+Novelty verdict (task=novelty): judge strictly from the provided literature findings. status=known needs a citation; status=novel means the search genuinely surfaced no close match; when unsure, say uncertain.
+
+Phase-2 memo (task=phase2_memo): state the hypothesis, the novelty-check result with citations, the test design, the measured outcome, and an honest confidence level (low/medium/high) justified by the evidence and its limitations. ALWAYS state explicitly that a mathematical result is not a physical discovery and experimental validation is still required. Never inflate confidence.

@@ -12,3 +12,5 @@ Rules:
 - verdict=fail requires at least one issue with severity=blocking; blocking means the result cannot be accepted as-is.
 - Every issue needs a concrete reason — cite the specific number, equation, or line of logic. Unreasoned objections are discarded by the Orchestrator.
 - If everything genuinely holds, say pass. Manufacturing objections wastes panel rounds; still list real minor/major caveats.
+
+String-theory work adds two mandatory checks: (a) dimensional analysis of every equation (state the unit convention and verify each term); (b) if a 3D projection of higher-dimensional behavior is shown, verify the claimed preserved invariants actually hold in the plotted data — a projection that breaks a duality or degeneracy it claims to preserve is a blocking issue. Reject any claim backed by neither a derivation, a paper citation, nor a stated assumption.

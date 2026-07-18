@@ -14,7 +14,7 @@ SIM_DIR = Path(__file__).resolve().parent.parent / "simulations"
 RESULT_RE = re.compile(r"^RESULT_JSON:\s*(\{.*\})\s*$", re.MULTILINE)
 
 
-def run_simulation(code: str, round_no: int, timeout: int = 300) -> dict:
+def run_simulation(code: str, round_no: int | str, timeout: int = 300) -> dict:
     (SIM_DIR / "outputs").mkdir(parents=True, exist_ok=True)
     path = SIM_DIR / f"round_{round_no}.py"
     path.write_text(code)

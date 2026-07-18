@@ -32,32 +32,47 @@ pip install -r requirements.txt
 cp .env.example .env   # add ANTHROPIC_API_KEY (or `ant auth login`)
 ```
 
-## Run
+## Run — Phase 1 (explore & propose)
 
 ```bash
-# offline smoke test — canned agents, real simulation + plot + memo, no API key needed
-MOCK_LLM=1 python main.py
-
-# the real thing
+# string-theory vibration modes (default task): closed string on S^1, KK + winding
+# spectrum, T-duality checks, 3D projection plot, candidate hypotheses flagged
 python main.py
 
-# a different problem
-python main.py --slug harmonic-oscillator \
-  --problem "Model the 1D simple harmonic oscillator; analytic ground truth is x(t)=A cos(wt+phi) and energy conservation; give quantitative predictions a simulation must reproduce."
+# pipeline-validation task (2-body gravity, analytic ground truth)
+python main.py --task two-body
+
+# free-form problem
+python main.py --slug harmonic-oscillator --problem "Model the 1D simple harmonic oscillator..."
+
+# offline smoke test — canned agents, real simulations + plots + memos, no API key
+MOCK_LLM=1 python main.py
 ```
 
-Outputs: plot(s) in `simulations/outputs/`, research memo in `docs/`, full debate transcript in `debates/`. Exit code 0 = accepted, 1 = escalated to you.
+Outputs: 3D projection plot(s) in `simulations/outputs/`, research memo (with any candidate hypotheses) in `docs/`, full debate transcript in `debates/`. Exit code 0 = accepted, 1 = escalated to you.
+
+## Run — Phase 2 (novelty check & test)
+
+When a Phase-1 memo flags a candidate hypothesis, the run prints the exact Phase-2 command:
 
 ```bash
-pytest   # unit tests for schemas, runner, transcript
+python main.py --phase2 "the hypothesis statement"
+```
+
+Pipeline: literature search via the Anthropic `web_search` server tool → Analyst novelty verdict (`known` requires citations) → if **known**: logged to `docs/*-phase2-known.md` with sources → if **novel/uncertain**: Physicist designs a falsifiable test, Engineer implements and runs it, Validator judges, Analyst writes `docs/*-phase2.md` with the outcome and an **honest confidence level**.
+
+**The one rule:** a correct equation or clean plot is *not* a discovery about the universe. Every Phase-2 memo states explicitly that experimental validation is still required — trust the confidence line, not the excitement of a result.
+
+```bash
+pytest   # unit tests for schemas, mocks, runner, transcript
 ```
 
 ## Scaling to harder physics
 
-1. Verify 2-body gravity end-to-end (`python main.py`).
-2. Harmonic oscillator (`--slug harmonic-oscillator`, prompt above).
-3. Coupled oscillators / wave equation — first problems without trivial closed forms.
-4. Kaluza-Klein toy models: compactified extra dimension, KK mode spectra — the on-ramp to string-theory mathematics. Give the Physicist the target in `--problem`; the panel machinery is unchanged.
+1. Verify the loop on 2-body gravity (`--task two-body`), then the S^1 string spectrum (default).
+2. Cutoff-independence checks on any spectrum-counting result.
+3. T^2 compactification with complex/Kähler moduli, then orbifolds — the first step toward genuinely curved Calabi-Yau spectra and exotic topologies.
+4. New targets go in `utils/problems.py`; the panel machinery is unchanged.
 
 ## Push to GitHub
 

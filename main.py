@@ -17,19 +17,13 @@ from langgraph.graph import END, StateGraph
 
 from agents import analyst, engineer, orchestrator, physicist
 from agents import validator as validator_agent
+from utils import llm
+from utils.problems import PROBLEMS
 from utils.runner import run_simulation
 from utils.transcript import Transcript
 
 MAX_ROUNDS = 5
 DOCS_DIR = Path(__file__).resolve().parent / "docs"
-
-DEFAULT_PROBLEM = (
-    "Model the gravitational two-body problem (a small mass orbiting a large one). "
-    "Provide the governing equations, an analytic ground truth (Kepler's third law and "
-    "energy conservation), and quantitative predictions a numerical simulation must "
-    "reproduce. This validates the panel's pipeline before scaling to harmonic "
-    "oscillators and then higher-dimensional (string-theory) mathematics."
-)
 
 
 class DebateState(TypedDict, total=False):
@@ -94,6 +88,9 @@ def node_analyze(state: DebateState) -> dict:
     memo = analyst.analyze(state["proposal"], state["run_result"], state["transcript"].tail(), state["transcript"])
     path = _write_memo(state["slug"], memo["memo_markdown"])
     print(f"  -> {path}")
+    for h in memo.get("candidate_hypotheses", []):
+        print(f"  candidate hypothesis: {h['statement']}")
+        print(f'    -> Phase 2: python main.py --phase2 "{h["statement"]}"')
     return {}
 
 
@@ -140,24 +137,76 @@ def build_graph():
     return g.compile()
 
 
+def run_phase2(hypothesis: str, slug: str) -> int:
+    """Novelty check -> (if novel/uncertain) design test -> run -> validate -> memo."""
+    transcript = Transcript(f"{slug}-phase2")
+    print(f"=== phase 2: novelty check & test ===\nhypothesis: {hypothesis}")
+
+    print("[analyst] searching literature (web_search)...")
+    research = llm.web_research(hypothesis)
+    transcript.log("analyst", "web_search", research)
+    verdict = analyst.novelty(hypothesis, research, transcript)
+    print(f"  -> novelty: {verdict['status']}")
+
+    if verdict["status"] == "known":
+        cites = "\n".join(f"- [{c['title']}]({c['url']})" for c in verdict["citations"]) or "- (none provided)"
+        memo_md = (
+            f"# Novelty check: already known\n\n## Hypothesis\n{hypothesis}\n\n"
+            f"## Verdict\nAlready in the literature.\n\n{verdict['summary']}\n\n"
+            f"## Citations\n{cites}\n\n## Reasoning\n{verdict['reasoning']}\n"
+        )
+        path = _write_memo(f"{slug}-phase2-known", memo_md)
+        print(f"[analyst] already known — logged with citations: {path}")
+        return 0
+
+    print("[physicist] designing test...")
+    test = physicist.design_test(hypothesis, verdict, transcript)
+    print(f"  -> {test['model_name']}")
+
+    print("[engineer] implementing + running test...")
+    built = engineer.build(test, None, transcript)
+    result = run_simulation(built["code"], round_no="p2")
+    transcript.log("harness", "run", {k: v for k, v in result.items() if k != "stdout"})
+    print(f"  -> ok={result['ok']} metrics={result['metrics']}")
+
+    print("[validator] judging result...")
+    attack = validator_agent.attack(test, built, result, transcript)
+    print(f"  -> verdict: {attack['verdict']}")
+
+    print("[analyst] writing phase-2 memo...")
+    memo = analyst.phase2_memo(hypothesis, verdict, test, result, attack, transcript)
+    path = _write_memo(f"{slug}-phase2", memo["memo_markdown"])
+    print(f"  -> outcome: {memo['outcome']} (confidence: {memo['confidence']})")
+    print(f"=== phase 2 end — memo: {path}, transcript: {transcript.path} ===")
+    return 0
+
+
 def main() -> int:
     load_dotenv()
     parser = argparse.ArgumentParser(description="Adversarial multi-agent physics simulation panel")
-    parser.add_argument("--problem", default=DEFAULT_PROBLEM)
-    parser.add_argument("--slug", default="two-body-gravity")
+    parser.add_argument("--task", choices=sorted(PROBLEMS), default="string-modes",
+                        help="named problem preset (default: string-modes)")
+    parser.add_argument("--problem", default=None, help="free-form problem text (overrides --task)")
+    parser.add_argument("--slug", default=None)
+    parser.add_argument("--phase2", metavar="HYPOTHESIS", default=None,
+                        help="run Phase 2 novelty-check and test on the given hypothesis")
     args = parser.parse_args()
 
-    slug = re.sub(r"[^a-z0-9-]", "-", args.slug.lower())
-    transcript = Transcript(slug)
+    preset = PROBLEMS[args.task]
+    problem = args.problem or preset["text"]
+    slug = re.sub(r"[^a-z0-9-]", "-", (args.slug or preset["slug"]).lower())
     mode = "MOCK" if os.environ.get("MOCK_LLM") == "1" else "LIVE"
-    print(f"=== debate start [{mode}] slug={slug} ===")
 
+    if args.phase2:
+        return run_phase2(args.phase2, slug)
+
+    transcript = Transcript(slug)
+    print(f"=== debate start [{mode}] slug={slug} ===")
     graph = build_graph()
     final = graph.invoke(
-        {"problem": args.problem, "slug": slug, "transcript": transcript},
+        {"problem": problem, "slug": slug, "transcript": transcript},
         {"recursion_limit": 60},
     )
-
     print(f"=== debate end: {final['resolution']['decision']} — transcript: {transcript.path} ===")
     return 0 if final["resolution"]["decision"] == "accept" else 1
 

@@ -12,3 +12,5 @@ Hard contract for the code you emit (the harness runs it unmodified):
 Implement the theory as stated — if you believe an equation is wrong, implement it anyway and let the metrics expose it; note your concern in how_it_maps_to_theory. Numerical choices (integrator, step size, tolerances) are yours: justify them and make them tight enough that failures indicate physics errors, not numerics.
 
 If given a previous failed run, fix the actual cause — do not loosen tolerances to make failures disappear.
+
+Higher-dimensional problems: when the proposal involves more than 3 dimensions (compactified modes, charge lattices), render a 3D Matplotlib projection (mpl_toolkits.mplot3d) of the higher-dimensional structure, and state in how_it_maps_to_theory which invariants the projection preserves (masses, symmetries, degeneracies) and which it discards. SymPy may be used for symbolic derivation inside the module; numerics stay in NumPy/SciPy.
