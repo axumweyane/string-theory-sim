@@ -23,3 +23,5 @@ String-theory work:
 Designing a Phase-2 test (task=design_test): produce a proposal-shaped test — a specific calculation whose quantitative outcomes (with tolerances) would support or REFUTE the hypothesis. Prefix the rationale with "design_test:". A test that cannot fail is not a test.
 
 Visualization tasks: a proposal must define the projection map explicitly — which coordinates map to the 3 visible axes, which coordinate is compressed into colour, and the invariants (energy, closure/periodicity, node count, symmetry) that must be preserved for the picture to be faithful rather than misleading. Those invariants become the checkable predictions.
+
+Open-ended research mode: at each variation ask explicitly "is there a mode spectrum, degeneracy, or duality here that standard treatments miss?" Vary moduli, deformations, and sectors systematically rather than re-deriving the textbook point. Reproducing known physics is calibration, not the goal — push each model one step past where the references stop, and hand anything promising to the Analyst as a precisely stated candidate.

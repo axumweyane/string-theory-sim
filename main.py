@@ -18,11 +18,11 @@ from langgraph.graph import END, StateGraph
 from agents import analyst, engineer, orchestrator, physicist
 from agents import validator as validator_agent
 from utils import llm
-from utils.problems import PROBLEMS
+from utils.problems import DEEP_VARIATIONS, PROBLEMS
 from utils.runner import run_simulation
 from utils.transcript import Transcript
 
-MAX_ROUNDS = 5
+MAX_ROUNDS = 5  # default; deep mode raises it (hard safety stop, not a target)
 DOCS_DIR = Path(__file__).resolve().parent / "docs"
 
 
@@ -36,6 +36,7 @@ class DebateState(TypedDict, total=False):
     attacks: list
     rebuttal: dict
     resolution: dict
+    memo: dict
     round: int
 
 
@@ -49,7 +50,7 @@ def node_propose(state: DebateState) -> dict:
 def node_build(state: DebateState) -> dict:
     print(f"[engineer] round {state['round']}: implementing + running simulation...")
     built = engineer.build(state["proposal"], state.get("run_result"), state["transcript"])
-    result = run_simulation(built["code"], state["round"])
+    result = run_simulation(built["code"], f"{state['slug']}-r{state['round']}")
     state["transcript"].log("harness", "run", {k: v for k, v in result.items() if k != "stdout"})
     print(f"  -> ok={result['ok']} metrics={result['metrics']}")
     for a in result.get("artifacts", []):
@@ -93,7 +94,7 @@ def node_analyze(state: DebateState) -> dict:
     for h in memo.get("candidate_hypotheses", []):
         print(f"  candidate hypothesis: {h['statement']}")
         print(f'    -> Phase 2: python main.py --phase2 "{h["statement"]}"')
-    return {}
+    return {"memo": memo}
 
 
 def node_escalate(state: DebateState) -> dict:
@@ -139,8 +140,12 @@ def build_graph():
     return g.compile()
 
 
-def run_phase2(hypothesis: str, slug: str) -> int:
-    """Novelty check -> (if novel/uncertain) design test -> run -> validate -> memo."""
+def run_phase2(hypothesis: str, slug: str) -> dict:
+    """Novelty check -> (if novel/uncertain) design test -> run -> validate -> memo.
+
+    Returns {"status": "known", "memo": path} or
+            {"status": "tested", "outcome", "confidence", "memo": path}.
+    """
     transcript = Transcript(f"{slug}-phase2")
     print(f"=== phase 2: novelty check & test ===\nhypothesis: {hypothesis}")
 
@@ -159,7 +164,7 @@ def run_phase2(hypothesis: str, slug: str) -> int:
         )
         path = _write_memo(f"{slug}-phase2-known", memo_md)
         print(f"[analyst] already known — logged with citations: {path}")
-        return 0
+        return {"status": "known", "memo": str(path)}
 
     print("[physicist] designing test...")
     test = physicist.design_test(hypothesis, verdict, transcript)
@@ -182,11 +187,86 @@ def run_phase2(hypothesis: str, slug: str) -> int:
     path = _write_memo(f"{slug}-phase2", memo["memo_markdown"])
     print(f"  -> outcome: {memo['outcome']} (confidence: {memo['confidence']})")
     print(f"=== phase 2 end — memo: {path}, transcript: {transcript.path} ===")
+    return {"status": "tested", "outcome": memo["outcome"], "confidence": memo["confidence"], "memo": str(path)}
+
+
+def run_debate(problem: str, slug: str) -> dict:
+    transcript = Transcript(slug)
+    print(f"=== debate start slug={slug} (round cap {MAX_ROUNDS}) ===")
+    graph = build_graph()
+    final = graph.invoke(
+        {"problem": problem, "slug": slug, "transcript": transcript},
+        {"recursion_limit": 8 * MAX_ROUNDS + 20},
+    )
+    print(f"=== debate end: {final['resolution']['decision']} — transcript: {transcript.path} ===")
+    return final
+
+
+def run_deep() -> int:
+    """Deep open-ended research: iterate the variation queue until a novel
+    candidate survives its falsifiable test, or the target space is exhausted.
+    Known results are logged with citations and the agents move ON."""
+    stats = {"explored": 0, "accepted": 0, "deadlocked": 0, "hypotheses": 0, "known": 0, "tested": []}
+    survivor = None
+
+    for var in DEEP_VARIATIONS:
+        print(f"\n########## variation {stats['explored'] + 1}/{len(DEEP_VARIATIONS)}: {var['name']} ##########")
+        stats["explored"] += 1
+        final = run_debate(var["text"], var["slug"])
+        if final["resolution"]["decision"] != "accept":
+            stats["deadlocked"] += 1
+            print("[deep] no accepted result for this variation — moving on")
+            continue
+        stats["accepted"] += 1
+
+        for h in final.get("memo", {}).get("candidate_hypotheses", []):
+            stats["hypotheses"] += 1
+            print(f"\n[deep] Phase 2 on candidate: {h['statement']}")
+            r = run_phase2(h["statement"], var["slug"])
+            if r["status"] == "known":
+                stats["known"] += 1
+                continue
+            stats["tested"].append({"hypothesis": h["statement"], **r})
+            if r["outcome"] == "supported":
+                survivor = {"variation": var["name"], "hypothesis": h["statement"], **r}
+                break
+        if survivor:
+            break
+
+    lines = [
+        "# Deep open-ended research — run summary",
+        "",
+        f"- variations explored: {stats['explored']}/{len(DEEP_VARIATIONS)}",
+        f"- debates accepted: {stats['accepted']}  |  deadlocked/escalated: {stats['deadlocked']}",
+        f"- candidate hypotheses raised: {stats['hypotheses']}",
+        f"- already known (cited, moved on): {stats['known']}",
+        f"- novel candidates tested: {len(stats['tested'])}",
+    ]
+    if survivor:
+        lines += [
+            "",
+            "## Novel candidate SURVIVED its falsifiable test",
+            f"- variation: {survivor['variation']}",
+            f"- hypothesis: {survivor['hypothesis']}",
+            f"- outcome: {survivor['outcome']} (confidence: {survivor['confidence']})",
+            f"- memo: {survivor['memo']}",
+            "",
+            "A surviving mathematical result is promising math, NOT a discovery about the "
+            "universe — experimental validation is still required for any claim about reality.",
+        ]
+    else:
+        lines += ["", "## No novel candidate survived — target space exhausted",
+                  "Everything surfaced was already in the literature or failed its test. "
+                  "That is the normal outcome of honest research."]
+    summary = "\n".join(lines) + "\n"
+    path = _write_memo("deep-research-summary", summary)
+    print(f"\n{summary}\nsummary written to {path}")
     return 0
 
 
 def main() -> int:
     load_dotenv()
+    global MAX_ROUNDS
     parser = argparse.ArgumentParser(description="Adversarial multi-agent physics simulation panel")
     parser.add_argument("--task", choices=sorted(PROBLEMS), default="string-modes",
                         help="named problem preset (default: string-modes)")
@@ -194,24 +274,28 @@ def main() -> int:
     parser.add_argument("--slug", default=None)
     parser.add_argument("--phase2", metavar="HYPOTHESIS", default=None,
                         help="run Phase 2 novelty-check and test on the given hypothesis")
+    parser.add_argument("--deep", action="store_true",
+                        help="deep open-ended research over the variation queue; novelty is the success condition")
+    parser.add_argument("--max-rounds", type=int, default=None,
+                        help="debate round cap (default: 5; deep mode: 40 hard safety stop)")
     args = parser.parse_args()
+
+    MAX_ROUNDS = args.max_rounds or (40 if args.deep else 5)
+    mode = "MOCK" if os.environ.get("MOCK_LLM") == "1" else "LIVE"
+    print(f"[mode: {mode}]")
+
+    if args.deep:
+        return run_deep()
 
     preset = PROBLEMS[args.task]
     problem = args.problem or preset["text"]
     slug = re.sub(r"[^a-z0-9-]", "-", (args.slug or preset["slug"]).lower())
-    mode = "MOCK" if os.environ.get("MOCK_LLM") == "1" else "LIVE"
 
     if args.phase2:
-        return run_phase2(args.phase2, slug)
+        run_phase2(args.phase2, slug)
+        return 0
 
-    transcript = Transcript(slug)
-    print(f"=== debate start [{mode}] slug={slug} ===")
-    graph = build_graph()
-    final = graph.invoke(
-        {"problem": problem, "slug": slug, "transcript": transcript},
-        {"recursion_limit": 60},
-    )
-    print(f"=== debate end: {final['resolution']['decision']} — transcript: {transcript.path} ===")
+    final = run_debate(problem, slug)
     return 0 if final["resolution"]["decision"] == "accept" else 1
 
 

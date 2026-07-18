@@ -69,6 +69,17 @@ Pipeline: literature search via the Anthropic `web_search` server tool → Analy
 
 **The one rule:** a correct equation or clean plot is *not* a discovery about the universe. Every Phase-2 memo states explicitly that experimental validation is still required — trust the confidence line, not the excitement of a result. Likewise every visualization memo states that a 3D projection is a compression of the mathematics — a shadow of the higher-dimensional object, not the object, and not evidence the dimensions physically exist.
 
+## Run — Deep open-ended research mode
+
+```bash
+python main.py --deep              # this one takes real time and real tokens
+python main.py --deep --max-rounds 60   # override the hard safety stop (default 40)
+```
+
+No 5-round cap — each debate runs until genuine consensus (Validator-confirmed with a derivation), a true deadlock (memo + move on), or the safety stop. Every proposal is simulated immediately in the sandbox; nothing is argued in the abstract. The driver walks a target space of **beyond-textbook variations** (`utils/problems.py: DEEP_VARIATIONS` — T² with complex/Kähler moduli, Wilson-line deformations, asymmetric shift orbifolds) and feeds every candidate hypothesis into the Phase-2 pipeline. **Novelty is the only success condition**: known results are logged with citations and the panel moves on; the run ends when a novel candidate survives its falsifiable test or the target space is exhausted. An end-of-run summary (also written to `docs/deep-research-summary.md`) reports variations explored, known vs tested counts, and whether anything survived.
+
+Honest expectation: most of what the panel surfaces will already exist — that is the normal outcome of real research, and the summary says so.
+
 ```bash
 pytest   # unit tests for schemas, mocks, runner, transcript
 ```
